@@ -5,11 +5,14 @@ var readTorrent = require('read-torrent'),
   uuid = require('node-uuid'),
   app = require('express')(),
   https = require('https'),
-  omx = require('omxctrl'),
+  omx = require('omxcontrol'),
   path = require('path'),
   fs = require('fs'),
+  rmdir = require('rimraf'),
   sys = require('sys'),
   exec = require('child_process').exec,
+  ps = require('ps-node'),
+  running = require('is-running'),
   engine;
 
 var STATES = ['PLAYING', 'PAUSED', 'IDLE'];
@@ -34,10 +37,12 @@ var mappings = {
 
 app.use(bodyParser());
 
-var stop = function() {
+var stopit = function() {
   if (!engine) return;
+  console.log('stopping..');
   engine.destroy();
   engine = null;
+  if(omx) omx.quit();
 };
 
 var createTempFilename = function() {
@@ -49,17 +54,21 @@ var clearTempFiles = function() {
     if (err) return;
     files.forEach(function(file) {
       if (file.substr(0, 11) === 'torrentcast') {
-        fs.rmdir(path.join(tempDir, file));
+        rmdir(path.join(tempDir, file), function(error){
+          if (error) console.log('error');
+          else console.log('removed temp folder');
+        });
       }
     });
   });
 };
 
 app.post('/play', function(req, res) {
+  console.log('in play');
   if (!req.body.url) return res.send(400, { error: 'torrent url missung' });
   readTorrent(req.body.url, function(err, torrent) {
     if (err) return res.send(400, { error: 'torrent link could not be parsed' });
-    if (engine) stop();
+    if (engine) stopit();
     clearTempFiles();
 
     engine = peerflix(torrent, {
@@ -69,17 +78,37 @@ app.post('/play', function(req, res) {
     });
 
     engine.server.on('listening', function() {
-      //omx.play('http://127.0.0.1:' + engine.server.address().port + '/');
-      vlc = exec('vlc http://127.0.0.1:' + engine.server.address().port + '/ --fullscreen', function(err, stdout, stderr){
-        console.log('starting vlc..');
-      });
+      console.log('listening emitted.');
+      omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
+      console.log('engine started.');
       res.send(200);
+    });
+    engine.on('download', function(index, buffer) {
+      console.log('finished a part: ' + index);
+      var omx_playing = false;
+      ps.lookup({command: 'omxplayer'}, function(err, results) {
+        results.forEach(function(proccess) {
+          if(process) {
+            omx_playing = true;
+          }
+        });
+        if(!omx_playing) {
+          omx.quit();
+          omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
+          console.log('starting omx player.');
+        }
+      });
     });
   });
 });
 
 app.post('/stop', function(req, res) {
-  stop();
+  stopit();
+  res.send(200);
+});
+
+app.post('/pause', function(req, res) {
+  if(omx) omx.pause();
   res.send(200);
 });
 
@@ -97,11 +126,12 @@ for (var route in mappings) {
 }
 
 options = {
-  key: fs.readFileSync('/home/patrick/Programming/Projects/pistream/key.pem'),
-  cert: fs.readFileSync('/home/patrick/Programming/Projects/pistream/server.crt')
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('server.crt')
 };
 
 https.createServer(options, app).listen(PORT);
+console.log('server started.');
 
 module.exports = function() {
   console.log('torrentcast running on port', PORT);
