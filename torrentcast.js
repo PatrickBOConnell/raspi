@@ -78,30 +78,22 @@ app.post('/play', function(req, res) {
     });
 
     engine.server.on('listening', function() {
-      console.log('listening emitted.');
-      omx.start('http://127.0.0.1:' + engine.server.address().port + '/', function restart(){
-        console.log('restarting...');
-        omx.start('http://127.0.0.1:' + engine.server.address().port + '/', restart);
-      });
       console.log('engine started.');
       res.send(200);
     });
-    // engine.on('download', function(index, buffer) {
-    //   console.log('finished a part: ' + index);
-    //   var omx_playing = false;
-    //   ps.lookup({command: 'omxplayer'}, function(err, results) {
-    //     results.forEach(function(proccess) {
-    //       if(process) {
-    //         omx_playing = true;
-    //       }
-    //     });
-    //     if(!omx_playing) {
-    //       omx.quit();
-    //       omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
-    //       console.log('starting omx player.');
-    //     }
-    //   });
-    // });
+    var parts = 0;
+    var started = false;
+    engine.on('download', function(index, buffer) {
+      parts++;
+      console.log(parts + ': finished a part: ' + index);
+      if(parts > 5 && !started) {
+        started = true;
+        omx.start('http://127.0.0.1:' + engine.server.address().port + '/', function restart(){
+          console.log('restarting...');
+          omx.start('http://127.0.0.1:' + engine.server.address().port + '/', restart);
+        });
+      }
+    });
   });
 });
 
