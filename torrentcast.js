@@ -77,13 +77,12 @@ app.post('/play', function(req, res) {
       buffer: (1.5 * 1024 * 1024).toString()
     });
 
-    restart = function() {
-      omx.start('http://127.0.0.1:' + engine.server.address().port + '/', restart());
-    }
-
     engine.server.on('listening', function() {
       console.log('listening emitted.');
-      omx.start('http://127.0.0.1:' + engine.server.address().port + '/', restart());
+      omx.start('http://127.0.0.1:' + engine.server.address().port + '/', function restart(){
+        console.log('restarting...');
+        omx.start('http://127.0.0.1:' + engine.server.address().port + '/', restart);
+      });
       console.log('engine started.');
       res.send(200);
     });
