@@ -126,8 +126,8 @@ for (var route in mappings) {
 }
 
 options = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('server.crt')
+  key: fs.readFileSync('/home/pi/pistream/raspi/key.pem'),
+  cert: fs.readFileSync('/home/pi/pistream/raspi/server.crt')
 };
 
 https.createServer(options, app).listen(PORT);
