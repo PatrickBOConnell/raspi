@@ -45,7 +45,6 @@ var stopit = function() {
   console.log('stopping..');
   engine.destroy();
   engine = null;
-  if(omx) omx.quit();
 };
 
 var createTempFilename = function() {
@@ -73,6 +72,7 @@ app.post('/play', function(req, res) {
     if (err) return res.send(400, { error: 'torrent link could not be parsed' });
     if (engine) stopit();
     clearTempFiles();
+    omx.quit();
 
     engine = peerflix(torrent, {
       connections: 100,
