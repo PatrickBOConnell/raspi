@@ -106,6 +106,7 @@ app.post('/play', function(req, res) {
           omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
           console.log('starting omx player.');
         }
+      });
     });
   });
 });
