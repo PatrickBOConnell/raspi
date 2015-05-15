@@ -119,11 +119,6 @@ app.post('/stop', function(req, res) {
   res.send(200);
 });
 
-app.post('/pause', function(req, res) {
-  if(omx) omx.pause();
-  res.send(200);
-});
-
 for (var route in mappings) {
   (function(method) {
     app.post(route, function(req, res) {
