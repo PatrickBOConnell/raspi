@@ -15,7 +15,10 @@ var readTorrent = require('read-torrent'),
   running = require('is-running'),
   engine;
 
-var STATES = ['PLAYING', 'PAUSED', 'IDLE'];
+process.on('uncaughtException', function(err) {
+  console.log('uncaught exception: ' + err);
+});
+
 var PORT = process.argv[2] || 9090;
 
 var mappings = {
@@ -88,11 +91,21 @@ app.post('/play', function(req, res) {
       console.log(parts + ': finished a part: ' + index);
       if(parts > 5 && !started) {
         started = true;
-        omx.start('http://127.0.0.1:' + engine.server.address().port + '/', function restart(){
-          console.log('restarting...');
-          omx.start('http://127.0.0.1:' + engine.server.address().port + '/', restart);
-        });
+        console.log('starting omx player.');
+        omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
       }
+      var omx_playing = false;
+      ps.lookup({command: 'omxplayer'}, function(err, results) {
+        results.forEach(function(proccess) {
+          if(process) {
+            omx_playing = true;
+          }
+        });
+        if(!omx_playing) {
+          omx.quit();
+          omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
+          console.log('starting omx player.');
+        }
     });
   });
 });
@@ -107,13 +120,10 @@ app.post('/pause', function(req, res) {
   res.send(200);
 });
 
-app.get('/state', function(req, res) {
-  res.send(200, STATES[omx.getState()]);
-});
-
 for (var route in mappings) {
   (function(method) {
     app.post(route, function(req, res) {
+      console.log('sending '+method);
       omx[method]();
       res.send(200);
     });
