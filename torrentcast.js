@@ -92,21 +92,24 @@ app.post('/play', function(req, res) {
       if(parts > 5 && !started) {
         started = true;
         console.log('starting omx player.');
+        omx.quit();
         omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
       }
       var omx_playing = false;
-      ps.lookup({command: 'omxplayer'}, function(err, results) {
-        results.forEach(function(proccess) {
-          if(process) {
-            omx_playing = true;
+      if(started) {
+        ps.lookup({command: 'omxplayer'}, function(err, results) {
+          results.forEach(function(proccess) {
+            if(process) {
+              omx_playing = true;
+            }
+          });
+          if(!omx_playing) {
+            omx.quit();
+            console.log('restarting omx player.');
+            omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
           }
         });
-        if(!omx_playing) {
-          omx.quit();
-          omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
-          console.log('starting omx player.');
-        }
-      });
+      }
     });
   });
 });
