@@ -65,12 +65,20 @@ var clearTempFiles = function() {
   });
 };
 
+app.post('/stream', function(req, res) {
+  if(!req.body.url) return res.send(400, {error: 'stream url missing'});
+  console.log('starting stream');
+  stopit();
+  omx.quit();
+  omx.start(req.body.url);
+});
+
 app.post('/play', function(req, res) {
   console.log('in play');
   if (!req.body.url) return res.send(400, { error: 'torrent url missung' });
   readTorrent(req.body.url, function(err, torrent) {
     if (err) return res.send(400, { error: 'torrent link could not be parsed' });
-    if (engine) stopit();
+    stopit();
     clearTempFiles();
     omx.quit();
 
