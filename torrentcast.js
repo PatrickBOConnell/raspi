@@ -66,8 +66,9 @@ var clearTempFiles = function() {
 };
 
 app.get('/', function(req, res) {
-  res.send("sup");
   console.log("stuff");
+  res.send("sup");
+
 });
 
 app.post('/stream', function(req, res) {
