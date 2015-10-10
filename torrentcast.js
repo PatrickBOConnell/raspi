@@ -65,6 +65,11 @@ var clearTempFiles = function() {
   });
 };
 
+app.get('/', function(req, res) {
+  res.send("sup");
+  console.log("stuff");
+});
+
 app.post('/stream', function(req, res) {
   if(!req.body.url) return res.send(400, {error: 'stream url missing'});
   console.log('starting stream');
