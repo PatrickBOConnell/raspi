@@ -5,7 +5,7 @@ var readTorrent = require('read-torrent'),
   uuid = require('node-uuid'),
   app = require('express')(),
   https = require('https'),
-  omx = require('omxcontrol'),
+  omx = require('omxdirector'),
   path = require('path'),
   fs = require('fs'),
   rmdir = require('rimraf'),
@@ -75,8 +75,8 @@ app.post('/stream', function(req, res) {
   if(!req.body.url) return res.send(400, {error: 'stream url missing'});
   console.log('starting stream');
   stopit();
-  omx.quit();
-  omx.start(req.body.url);
+  omx.stop();
+  omx.play(req.body.url);
 });
 
 app.post('/play', function(req, res) {
@@ -86,7 +86,7 @@ app.post('/play', function(req, res) {
     if (err) return res.send(400, { error: 'torrent link could not be parsed' });
     stopit();
     clearTempFiles();
-    omx.quit();
+    omx.stop();
 
     engine = peerflix(torrent, {
       connections: 100,
@@ -106,8 +106,8 @@ app.post('/play', function(req, res) {
       if(parts > 5 && !started) {
         started = true;
         console.log('starting omx player.');
-        omx.quit();
-        omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
+        omx.stop();
+        omx.play('http://127.0.0.1:' + engine.server.address().port + '/');
       }
       var omx_playing = false;
       if(started) {
@@ -118,9 +118,9 @@ app.post('/play', function(req, res) {
             }
           });
           if(!omx_playing) {
-            omx.quit();
+            omx.stop();
             console.log('restarting omx player.');
-            omx.start('http://127.0.0.1:' + engine.server.address().port + '/');
+            omx.play('http://127.0.0.1:' + engine.server.address().port + '/');
           }
         });
       }
