@@ -149,7 +149,7 @@ options = {
 };
 
 https.createServer(options, app).listen(PORT);
-console.log('server started changed.');
+console.log('server started on port: ' + PORT);
 
 module.exports = function() {
   console.log('torrentcast running on port', PORT);
